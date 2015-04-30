@@ -31,32 +31,39 @@ class entry {
         $this->purify->syncbbs = $this->syncbbs;
         $this->purify->idtype = $this->idtype;
         // 初始化缓存表数据模板
-        // $postData = array(
-        //     "textid" => $this->purify->textid,
-        //     "idtype" => $this->purify->idtype,
-        //     "cidtype" => "",
-        //     "classid" => 0,
-        //     "title" => "",
-        //     "message" => "",
-        //     "userid" => $_G['uid'] ? $_G['uid'] : 0,
-        //     "username" => $_G['username'],
-        //     "groupid" => intval($_G['groupid']),
-        //     "signature" => "",
-        //     "ip" => helper::getIp(),
-        //     "date" => date('Y-m-d H:i:s', time()),
-        //     "pubaction" => $this->pubaction,//默认主题帖
-        //     "tid" => $this->tid ? $this->tid : 0,
-        //     "url" => "",
-        //     "status" => 8#状态默认不存在
-        // );
+        $postData = array(
+            "textid" => $this->purify->textid,
+            "idtype" => $this->purify->idtype,
+            "cidtype" => "",
+            "classid" => 0,
+            "title" => "",
+            "message" => "",
+            "userid" => $_G['uid'] ? $_G['uid'] : 0,
+            "username" => $_G['username'],
+            "groupid" => intval($_G['groupid']),
+            "signature" => "",
+            "ip" => helper::getIp(),
+            "date" => date('Y-m-d H:i:s', time()),
+            "pubaction" => $this->pubaction,//默认主题帖
+            "tid" => $this->tid ? $this->tid : 0,
+            "url" => "",
+            "status" => 8#状态默认不存在
+        );
         // 设置主题id
+        $this->purify->appTypeKey = $this->appTypeKey;
         $this->purify->tid = $this->tid;
         $post = $this->purify->get_record();
         if ($post['status'] == -1) {
             sleep(1);#延缓一秒,应对主从数据库延迟问题
             $post = $this->purify->get_record();
         }
-        file_put_contents("/home/tanxu/www/post.txt", $post['data']['status'], FILE_APPEND);
+        #如果帖子存在
+        if ($post['data']['status'] != -1) {
+        //获得真实缓存表数据
+            $postData = $this->purify->replaceCache($postData, $post);
+        }
+        $this->purify->run($postData);
+        // file_put_contents("/home/tanxu/www/post.txt", $postData['ip']."\r\n" , FILE_APPEND);
         // #获取数据信息
     }
 
