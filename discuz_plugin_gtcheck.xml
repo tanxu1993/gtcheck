@@ -43,5 +43,6 @@
 			</item>
 		</item>
 		<item id="version"><![CDATA[X2.5,X3.0,X3.1,X3.2]]></item>
+		<item id="installfile"><![CDATA[install.php]]></item>
 	</item>
 </root>
