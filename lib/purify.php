@@ -136,7 +136,34 @@ class purify {
         if ($this->format == 'json') {
             $retJson = json_decode($resp, true);
         }
+        if (!$retJson) {
+            file_put_contents("/www/discuz/discuz_30_UTF8/upload/source/plugin/post.txt", "json decode,data:" . $resp."\r\n", FILE_APPEND);
+            // $this->log("json decode,data:" . $resp, 1);
+            return false;
+        }
         $result = (array) current(current(current($retJson)));
+        if (!isset($result['textId']) || !isset($result['flag'])) {
+            $errorArr = (array) current($retJson);
+            if (!isset($errorArr['errorCode'])) {
+                file_put_contents("/www/discuz/discuz_30_UTF8/upload/source/plugin/post.txt", "textId or flag null, msg:" . $resp."\r\n", FILE_APPEND);
+                // $this->log("textId or flag null, msg:" . $resp, 1);
+                return false;
+            }
+            $errorCode = intval($errorArr['errorCode']);
+            if ($errorCode == 7) {#param 参数错误
+                $result['flag'] = 2; #默认疑似帖
+            } elseif ($errorCode == 2 || $errorCode == 3) {#默认补发
+                file_put_contents("/www/discuz/discuz_30_UTF8/upload/source/plugin/post.txt", "errorCode:{$errorArr['errorCode']}, errorMsg:{$errorArr['errorMsg']}"."\r\n", FILE_APPEND);
+                // $this->log("errorCode:{$errorArr['errorCode']}, errorMsg:{$errorArr['errorMsg']}", 1);
+                return false;
+            // } else {
+            //     #删除缓存,不补发
+            //     C::t($this->tableKey['hl_cache'])->delete($where);
+            //     $this->log("errorCode:{$errorArr['errorCode']}, errorMsg:{$errorArr['errorMsg']}", 1);
+            //     return false;
+            }
+        }
+        file_put_contents("/www/discuz/discuz_30_UTF8/upload/source/plugin/post.txt", http_build_query(current(current(current($retJson))))."\r\n", FILE_APPEND);
         $result['flag'] = intval($result['flag']); 
         //识别结果
         $flag = $result['flag']; //识别结果
@@ -353,7 +380,6 @@ class purify {
         $xml .= '<contentEx><![CDATA[' . $this->syncbbs . ']]></contentEx>';
         $xml .= '</content>';
         $xml .= '</contents>';
-
         $xml = $this->convert($xml);
         return $xml;
     }    //get params
@@ -388,8 +414,14 @@ class purify {
 
     function convert($text, $des = "send") {
         global $_G;
-        include DISCUZ_ROOT .  '/config /config_global.php';
-        $charset = $_config['output']['charset'];
+        if (defined(CHARSET)) {
+            $charset = CHARSET;
+        }
+        $charset = $charset ? $charset : $_G['config']['output']['charset'];
+        if (empty($charset) && file_exists(DISCUZ_ROOT . '/config/config_global.php')) {
+            include DISCUZ_ROOT . '/config/config_global.php';
+            $charset = $_config['output']['charset'];
+        }
         if ('UTF-8' != strtoupper(trim($charset))) {
             if ($des == 'send') {
                 if (function_exists('mb_convert_encoding')) {
