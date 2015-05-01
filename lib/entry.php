@@ -53,6 +53,7 @@ class entry {
         $this->purify->appTypeKey = $this->appTypeKey;
         $this->purify->tid = $this->tid;
         $post = $this->purify->get_record();
+        file_put_contents("/www/discuz/discuz_30_UTF8/upload/source/plugin/post.txt", "\r\n"."username=".$post['data']['username']."\r\n"."status=".$post['status']."\r\n" ."time=".date('Y-m-d H:i:s', time())."\r\n", FILE_APPEND);
         if ($post['status'] == -1) {
             sleep(1);#延缓一秒,应对主从数据库延迟问题
             $post = $this->purify->get_record();
@@ -61,6 +62,7 @@ class entry {
         if ($post['data']['status'] != -1) {
         //获得真实缓存表数据
             $postData = $this->purify->replaceCache($postData, $post);
+        // file_put_contents("/www/discuz/discuz_30_UTF8/upload/source/plugin/post.txt", "postdata=".http_build_query($postData)."\r\n", FILE_APPEND);
         }
         $this->purify->run($postData);
         // file_put_contents("/home/tanxu/www/post.txt", $postData['ip']."\r\n" , FILE_APPEND);

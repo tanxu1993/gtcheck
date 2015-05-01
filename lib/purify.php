@@ -10,8 +10,13 @@ class purify {
     var $tid = "";
     var $timestamp = "";
     var $format = "json";
-    var $curCfg = array();
     var $config = array();
+    var $idtypeArr = array("blog" => 1, "doing" => 2, "album" => 3, "share" => 4, "comment" => 5, "group" => 6, "bbs" => 7, 'follow' => 8);
+    //当前操作数据运行配置数组
+    var $curCfg = array();
+    //运行配置数组列表
+    var $curCfgArr = array();
+
     //instance object
     function &singleton($appTypeKey = "") {
         static $purifyobj;
@@ -41,7 +46,7 @@ class purify {
             $data['status'] = 1; #待审
         }
         $data['data'] = $post;
-        // file_put_contents("/home/tanxu/www/post.txt", $data['data']['status'], FILE_APPEND);
+        // file_put_contents("/home/tanxu/www/post.txt", http_build_query($post), FILE_APPEND);
         return $data;
     }
 
@@ -119,23 +124,114 @@ class purify {
 
     function run(&$post){
         $this->config = @include DISCUZ_ROOT.'/source/plugin/gtcheck/config/config.php';
-            // $id = $post['textid'];
-            // $callPost = "sig=" . md5($this->config['app_key']);
-            // $callPost .= "&textid={$id}&idtype={$post['idtype']}";
-            // $callPost .= "&contentEx={$this->syncbbs}";
-            // #调用代理页面，只POST不接收
-            // $this->send_request($callUrl, $callPost, 0, 3, false);
+        $this->curCfgArr = @include DISCUZ_ROOT.'/source/plugin/gtcheck/config/configapp.php';
+        $this->idtype = intval($this->idtypeArr[$this->appTypeKey]);
+        $this->curCfg = $this->curCfgArr[$this->idtype];
+
         $params = $this->get_params($post);
         //发送请求
+        // file_put_contents("/www/discuz/discuz_30_UTF8/upload/source/plugin/post.txt", "params=".$params."\r\n" , FILE_APPEND);
         $url = $this->config['predict_api'];
         $resp = $this->send_request($url, $params, 1, $this->config['timeout']);
         if ($this->format == 'json') {
             $retJson = json_decode($resp, true);
         }
         $result = (array) current(current(current($retJson)));
-        $result['flag'] = intval($result['flag']); //识别结果
-        // return 
-        file_put_contents("/home/tanxu/www/post.txt", $result['flag'] , FILE_APPEND);
+        $result['flag'] = intval($result['flag']); 
+        //识别结果
+        $flag = $result['flag']; //识别结果
+        file_put_contents("/www/discuz/discuz_30_UTF8/upload/source/plugin/post.txt", "flag=".$flag."\r\n" , FILE_APPEND);
+        if ($flag == 1) {
+            # code...
+                    $key = "invisible";
+                    $val = -5;
+                    $data = array($key => $val);
+                    $where = "pid IN ({$this->textid})";
+                    // $idtype = "pid";
+                    // $idval = $option['updatePost']['val1_idval'];
+
+                    C::t("#gtcheck#forum_post_plugin")->update_by_id($data,$where);
+        }
+        // // return 
+        // #post表分表,主题id检查及赋值
+        // if ($this->curCfg['table'] == "post") {
+        //     if (!$post['tid']) {
+        //         return false;
+        //     }
+        //     $this->tid = $post['tid']; #设置主题id,post分表使用
+        // }
+
+        // #根据当前用户应用获取标引垃圾贴的处理方式
+        // if ($this->appTypeKey == 'bbs' || $this->appTypeKey == 'group'){
+        //     $this->config['check_all'] = $this->config['check_all_arr']['bbs'];
+        // }else if ($this->appTypeKey == 'blog'){
+        //     $this->config['check_all'] = $this->config['check_all_arr']['blog'];
+        // }else{
+        //     $this->config['check_all'] = $this->config['check_all_arr']['other'];
+        // }
+        //start, 处理帖子状态,如果当前帖子已经处于待审状态,即后台设置了审核
+        // if ($post['status']) {
+        //     // $this->log('moderate status', 0, true);
+        //     //搜索common_moderate表,查询帖子审核信息是否存在
+            // if ($this->curCfg['table'] == "comment") {
+                // $idtype = $post['cidtype'] . "_cid";
+        //         $where = "`id`={$post['textid']} and `status`=0";
+        //     } elseif ($this->curCfg['table'] == "post" && $post['pubaction'] == "1") {
+        //         $idtype = 'tid';
+        //         $where = "`id`={$post['tid']} and `status`=0";
+        //     } else {
+        //         $idtype = $this->curCfg['idtype'];
+        //         $where = "`id`={$post['textid']} and `status`=0";
+        //     }
+        //      $count = C::t($this->tableKey['moderate'])->count($idtype, $where);
+        // //     //帖子仍然待审,并且标引为垃圾
+        //     if ($count && $flag == 1) {
+        //         if ($this->config['check_all'] == '0') {
+        //             //搜索表,查询帖子存在性
+        //             $res = $this->get_record();
+        //             //如果帖子存在,即没有被删除
+        //             if ($res['status'] != -1) {
+        // //                 $this->log('delete deal', 0, true);
+        //                 $tmpArr[$res['data']['textid']] = $res['data'];
+        // file_put_contents("/home/tanxu/www/post.txt", $res['data'] , FILE_APPEND);
+        // //                 //delete
+        // //                 $this->deal("delete", $tmpArr);
+        // //                 $this->log('delete deal end', 0, true);
+        //             } 
+        //         }
+        //     }
+        //     $this->log('moderate status end', 0, true);
+        // } else {#未设置审核
+        // //     $this->log('normal status', 0, true);
+        // //     //搜索表,查询帖子存在性
+        //     $res = $this->get_record();
+        // //     //如果帖子存在,即没有被删除
+        //     if ($res['status'] != -1) {
+        // //         $this->log('get record success', 0, true);
+        //         $tmpArr[$res['data']['textid']] = $res['data'];
+        // //         #标引为疑似贴
+        //         if ($flag == 2) {
+        // //             $this->log('check deal', 0, true);
+        // //             //进入待审
+        // //             $this->deal("check", $tmpArr);
+        // //             $this->log('check deal end', 0, true);
+        //         } elseif ($flag == 1) {#标引为垃圾贴
+        //             if ($this->config['check_all'] == '0') {
+        // //                 $this->log('delete deal', 0, true);
+        // //                 //delete
+        //                 $this->deal("delete", $tmpArr);
+        // //                 $this->log('delete deal end', 0, true);
+        //             } else {
+        // //                 $this->log('check deal', 0, true);
+        // //                 //进入待审
+        //                 $this->deal("check", $tmpArr);
+        // //                 $this->log('check deal end', 0, true);
+        //             }
+        //         } 
+        //     }
+        // }
+        //end
+        // file_put_contents("/home/tanxu/www/post.txt", $result['flag'] , FILE_APPEND);
     }
 
     function send_request($url, $post = '', $limit = 1, $timeout = 10, $block = TRUE) {
@@ -176,6 +272,8 @@ class purify {
         }
         //请求失败
         if (!$fp) {
+            file_put_contents("/www/discuz/discuz_30_UTF8/upload/source/plugin/post.txt", "socket failure"."\r\n", FILE_APPEND);
+
             // $this->log("socket failure,message:" . $errstr, 1);
             return false;
         }
@@ -184,6 +282,7 @@ class purify {
         //socket写失败
         if (!$r) {
             @fclose($fp);
+            file_put_contents("/www/discuz/discuz_30_UTF8/upload/source/plugin/post.txt", "socket write"."\r\n", FILE_APPEND);
             // $this->log('socket write failure', 1);
             return false;
         }
@@ -195,6 +294,7 @@ class purify {
         if ($limit == 0) {
             usleep(100000);
             @fclose($fp);
+            file_put_contents("/www/discuz/discuz_30_UTF8/upload/source/plugin/post.txt", "socket write ok and close socket"."\r\n", FILE_APPEND);
             // $this->log('socket write ok and close socket', 0, true);
             return true;
         }
@@ -221,6 +321,7 @@ class purify {
         @fclose($fp);
         //超时
         if ($status['timed_out']) {
+            file_put_contents("/www/discuz/discuz_30_UTF8/upload/source/plugin/post.txt", "socket read timeout"."\r\n", FILE_APPEND);
             // $this->log('socket read timeout', 1);
             return false;
         }

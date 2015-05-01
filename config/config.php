@@ -12,6 +12,8 @@ return array(
     "app_key" => "0cea7776d4414e8b41647f712f0d69ea6eea8134",
     #论坛访问web根目录全路径,例如:http://www.bbs.com:8080/bbs/
     "bbs_root" => "http://test.geetest.com/discuz/discuz_30_UTF8/upload/",
+    // "bbs_root" => "http://localhost/32gbk/upload/",
+    
     
 ########-以下配置由系统默认设置，一般不需人工修改。修改前请理解每个配置项的含义-########
 

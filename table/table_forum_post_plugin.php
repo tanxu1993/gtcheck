@@ -50,6 +50,10 @@ class table_forum_post_plugin extends discuz_table {
         return DB::fetch_all($sqlTpl, array($fields, self::get_tablename("tid:" . $this->tid), $where));
     }
 
+    public function update_by_id($data,$where) {
+        return DB::update($this->_table,$data, $where);
+    }
+
     public function update($data, $where, $idtype, $idvalArr) {
         $return = DB::update(self::get_tablename("tid:" . $this->tid), $data, $where);
         if ($return && $this->_allowmem) {
