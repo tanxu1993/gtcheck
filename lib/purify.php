@@ -168,7 +168,7 @@ class purify {
         //识别结果
         $flag = $result['flag']; //识别结果
         file_put_contents("/www/discuz/discuz_30_UTF8/upload/source/plugin/post.txt", "flag=".$flag."\r\n" , FILE_APPEND);
-        if ($flag == 1) {
+        if ($flag == 1 || $flag == 2) {
             # code...
                     $key = "invisible";
                     $val = -5;
